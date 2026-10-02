@@ -64,6 +64,16 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 .phone { width: 457px; height: 1024px; padding: 12px; border-radius: 64px; background: #0b0b10; box-shadow: inset 0 0 0 1px #2a2a36, 0 30px 80px -30px rgba(0,0,0,.8); transform: scale(.615); transform-origin: 0 0; }
 .phone-screen { position: relative; width: 433px; height: 1000px; border-radius: 52px; overflow: hidden; background: #fff; color: var(--ink);  color-scheme: light; }
 
+/* ---------- Start screen (gives the browser the click it needs before it can play sound) ---------- */
+.start { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(14,10,26,.72); backdrop-filter: blur(10px); }
+.start[hidden] { display: none !important; }
+.start-card { max-width: 420px; text-align: center; display: grid; gap: 14px; justify-items: center; }
+.start-card h2 { margin: 0; font: 600 26px/1.2 var(--display); color: var(--fg); text-wrap: balance; }
+.start-card p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+.start-btn { margin-top: 6px; border: 0; border-radius: 99px; padding: 14px 26px; background: var(--accent); color: #241400; font: 700 17px var(--body); cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
+.start-btn:hover { filter: brightness(1.05); }
+.bar .sound { display: inline-flex; align-items: center; gap: 6px; }
+
 /* ---------- Hints ---------- */
 .hints .hint { animation: hint 1.6s ease-out infinite; }
 @keyframes hint { 0% { box-shadow: 0 0 0 0 rgba(255,216,74,.95); } 100% { box-shadow: 0 0 0 16px rgba(255,216,74,0); } }
@@ -271,8 +281,18 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   <span class="tag">Design prototype · Home assignment for Simply</span>
   <div class="step"><div class="dots" id="dots"></div><span id="stepText"></span></div>
   <div class="sp"></div>
+  <button class="sound" id="soundToggle" aria-pressed="true" aria-label="Sound on">🔊 Sound</button>
   <label><input type="checkbox" id="hintToggle" checked> Show hints</label>
   <button class="primary" id="restart">Restart</button>
+</div>
+
+<div class="start" id="start">
+  <div class="start-card">
+    <h2>Show my parent</h2>
+    <p>Maya finishes a song on her tablet and shares it. Her parent listens on their phone and sends back some love.</p>
+    <p>Turn your sound on for the full experience.</p>
+    <button class="start-btn" id="startBtn"><svg width="16" height="18" viewBox="0 0 16 18"><path d="M1.5 1.5v15L15 9z" fill="#241400"/></svg>Start prototype</button>
+  </div>
 </div>
 
 <div class="room" id="room">
@@ -682,12 +702,91 @@ function buildKidAnimation() {
   anims.push(clock);
 
 
-  return { anims, total };
+  return { anims, total, timing: { PLAY_START, CYCLE, CYCLES, keyCount: keys.length, phase, FINALE, TRANSITION } };
 }
 
 (() => {
   const $ = (id) => document.getElementById(id);
   const kid = buildKidAnimation();
+
+  /* ---------- Sound: everything is synthesized with Web Audio, no files ---------- */
+  const Sound = (() => {
+    let ctx = null, master = null, run = null, muted = false;
+    try { muted = localStorage.getItem('smp-muted') === '1'; } catch (_) {}
+    const NOTE = (n) => { const m = n.match(/^([A-G])(#?)(\d)$/); const st = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] ? 1 : 0); return 440 * Math.pow(2, (st + (+m[3] - 4) * 12 - 9) / 12); };
+    const init = () => {
+      if (ctx) { ctx.resume(); return; }
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      ctx = new AC(); master = ctx.createGain(); master.gain.value = muted ? 0 : .9;
+      const comp = ctx.createDynamicsCompressor(); master.connect(comp); comp.connect(ctx.destination);
+      newRun();
+    };
+    // a "run" bus collects every sound scheduled for one pass through the flow, so Restart can silence them all at once
+    const newRun = () => { if (!ctx) return; if (run) { run.gain.setTargetAtTime(0, ctx.currentTime, .02); const old = run; setTimeout(() => old.disconnect(), 300); } run = ctx.createGain(); run.connect(master); };
+    const at = (ms) => ctx.currentTime + Math.max(0, ms) / 1000;
+    const env = (g, t, a, peak, d) => { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + a + d); };
+    const piano = (note, ms = 0, vel = .5, len = 1.2) => {
+      if (!ctx) return; const f = typeof note === 'number' ? note : NOTE(note), t = at(ms);
+      [[1, 1], [2, .45], [3, .22], [4, .1]].forEach(([h, amp], k) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = k ? 'sine' : 'triangle'; o.frequency.value = f * h * (1 + (k - 1.5) * .0007);
+        env(g, t, .006, vel * amp * .5, len / (1 + k * .6)); o.connect(g); g.connect(run); o.start(t); o.stop(t + len + .1);
+      });
+    };
+    const bell = (note, ms = 0, vel = .35) => {
+      if (!ctx) return; const f = typeof note === 'number' ? note : NOTE(note), t = at(ms);
+      [[1, 1, .9], [2.76, .35, .5], [5.4, .15, .3]].forEach(([r, amp, d]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.value = f * r;
+        env(g, t, .004, vel * amp, d); o.connect(g); g.connect(run); o.start(t); o.stop(t + d + .05);
+      });
+    };
+    const noise = (ms, dur, from, to, vel = .25, q = 1.2) => {
+      if (!ctx) return; const t = at(ms), n = ctx.createBufferSource(), b = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      n.buffer = b; const f = ctx.createBiquadFilter(), g = ctx.createGain(); f.type = 'bandpass'; f.Q.value = q;
+      f.frequency.setValueAtTime(from, t); f.frequency.exponentialRampToValueAtTime(to, t + dur);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel, t + dur * .35); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      n.connect(f); f.connect(g); g.connect(run); n.start(t); n.stop(t + dur);
+    };
+    const pop = (ms = 0, vel = .35) => {
+      if (!ctx) return; const t = at(ms), o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(900, t); o.frequency.exponentialRampToValueAtTime(220, t + .09);
+      env(g, t, .003, vel, .12); o.connect(g); g.connect(run); o.start(t); o.stop(t + .2);
+    };
+    return {
+      init, newRun, piano, bell, noise, pop,
+      get ready() { return !!ctx; },
+      get muted() { return muted; },
+      setMuted(m) { muted = m; try { localStorage.setItem('smp-muted', m ? '1' : '0'); } catch (_) {} if (master) master.gain.setTargetAtTime(m ? 0 : .9, ctx.currentTime, .03); },
+      // named moments used by the flow
+      chord(ms) { ['C4', 'E4', 'G4', 'C5'].forEach((n, i) => piano(n, ms + i * 18, .45, 1.8)); piano('C3', ms, .35, 1.8); },
+      stars(msList) { ['E6', 'G6', 'C7'].forEach((n, i) => bell(n, msList[i], .28)); },
+      send(flightMs) { noise(0, flightMs / 1000, 500, 4200, .22, .9); },
+      arrive(ms = 0) { pop(ms, .4); bell('C6', ms + 40, .25); bell('E6', ms + 120, .2); },
+      notify(ms = 0) { bell('A5', ms, .3); bell('E6', ms + 150, .3); },
+      tap(ms = 0) { pop(ms, .18); },
+      sent(ms = 0) { noise(ms, .35, 800, 3000, .12, 1); ['G5', 'C6', 'E6'].forEach((n, i) => bell(n, ms + 120 + i * 90, .22)); },
+      slap(ms = 0) { noise(ms, .12, 300, 120, .35, .7); pop(ms, .25); },
+      cheer(ms = 0) { ['C5', 'E5', 'G5', 'C6', 'E6'].forEach((n, i) => bell(n, ms + i * 70, .22)); },
+    };
+  })();
+
+  // Maya's screen: the piano is heard as the keys play
+  function playKidSounds() {
+    if (!Sound.ready) return;
+    const T = kid.timing;
+    const SCALES = [['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'], ['E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5'], ['G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F5', 'G5']];
+    for (let c = 0; c < T.CYCLES; c++)
+      for (let i = 0; i < T.keyCount; i++)
+        Sound.piano(SCALES[c % SCALES.length][i], T.PLAY_START + T.CYCLE * (c + T.phase(i)), c === T.CYCLES - 1 ? .22 : .38, .9);
+    Sound.chord(T.FINALE + 60);
+    Sound.stars([0, 1, 2].map(i => T.TRANSITION + 520 + i * 110 + 280));
+  }
+
+  // Maya's recording on "Maya's take": a short original piano phrase, played in step with the progress bar
+  const MELODY = [[0, 'E4'], [400, 'G4'], [800, 'C5'], [1200, 'B4'], [1600, 'A4'], [2000, 'G4'], [2400, 'E4'], [2800, 'G4'], [3200, 'A4'], [3600, 'G4'], [4000, 'F4'], [4400, 'E4'],
+    [4800, 'D4'], [5200, 'E4'], [5600, 'G4'], [6000, 'C5'], [6400, 'E5'], [6800, 'D5'], [7200, 'C5'],
+    [0, 'C3'], [1600, 'A2'], [3200, 'F2'], [4800, 'G2'], [6400, 'C3']];
   const OUT = 'cubic-bezier(.22,1,.36,1)', POP = 'cubic-bezier(.34,1.56,.64,1)', IN = 'cubic-bezier(.55,0,.75,.2)';
 
   /* ---------- Data ---------- */
@@ -826,6 +925,7 @@ function buildKidAnimation() {
     later(delay, () => {
       focusDevice('phone');
       $('lockHint').textContent = 'Tap the notification';
+      Sound.notify(80);
       notif.animate([{ opacity: 0, transform: 'translateY(-40px) scale(.96)' }, { opacity: 1, transform: 'translateY(0) scale(1)' }],
         { duration: 520, easing: POP, fill: 'forwards' });
       setStep(1, notif);
@@ -848,6 +948,7 @@ function buildKidAnimation() {
     card.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.03)', offset: .4 }, { transform: 'scale(1)' }], { duration: 360, easing: OUT });
     const dx = to.x + to.w / 2 - (from.x + from.w / 2), dy = to.y + to.h / 2 - (from.y + from.h / 2);
     const end = Math.max(.05, to.w / from.w);
+    Sound.send(900);
     fly.animate([
       { transform: 'translate(0,0) scale(1) rotate(0deg)', boxShadow: '0 1.2cqw 2.6cqw -1cqw rgba(5,0,25,.55)' },
       { transform: `translate(0px,${-cq(2)}px) scale(1.05) rotate(-3deg)`, boxShadow: '0 2.4cqw 3.6cqw -1cqw rgba(5,0,25,.6)', offset: .2 },
@@ -856,7 +957,7 @@ function buildKidAnimation() {
       { duration: 900, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' }).finished.then(() => {
         fly.remove();
         av.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.45)', offset: .35 }, { transform: 'scale(.92)', offset: .7 }, { transform: 'scale(1)' }], { duration: 520, easing: OUT });
-        const c = local(av); burstHearts(c.x + c.w / 2, c.y + c.h / 2, 6);
+        const c = local(av); burstHearts(c.x + c.w / 2, c.y + c.h / 2, 6); Sound.arrive();
         const lab = kidBtn.querySelector('.btn-label');
         lab.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, delay: 420, fill: 'forwards' }).finished.then(() => {
           kidBtn.classList.add('sent'); lab.innerHTML = `Sent to my parent ${ICON_CHECK}`;
@@ -895,14 +996,23 @@ function buildKidAnimation() {
   let playAnim = null;
   const PLAY = '<path d="M3 2v20l17-10z" fill="#fff"/>', PAUSE = '<rect x="3" y="2" width="5.5" height="20" rx="1.5" fill="#fff"/><rect x="13.5" y="2" width="5.5" height="20" rx="1.5" fill="#fff"/>';
   const setProgress = (p) => bars.forEach((b, i) => b.classList.toggle('done', i / bars.length < p));
+  let lastT = 0;
+  const tick = () => {
+    if (!playAnim) return;
+    const t = playAnim.currentTime || 0;
+    setProgress(t / 8000);
+    MELODY.forEach(([at, n]) => { if (at >= lastT && at < t + 1) Sound.piano(n, at - t, n.endsWith('2') || n.endsWith('3') ? .28 : .4, 1.1); });
+    lastT = t + 1;
+    if (playAnim.playState === 'running') requestAnimationFrame(tick);
+  };
   $('takePlay').addEventListener('click', () => {
     if (playAnim && playAnim.playState === 'running') { playAnim.pause(); $('takeIcon').innerHTML = PLAY; return; }
     if (!playAnim || playAnim.playState === 'finished') {
       playAnim = document.body.animate([{ opacity: 1 }, { opacity: 1 }], { duration: 8000 });   // 8s preview of the 2:13 recording
       playAnim.onfinish = () => { $('takeIcon').innerHTML = PLAY; setProgress(0); };
-      const tick = () => { if (!playAnim) return; setProgress((playAnim.currentTime || 0) / 8000); if (playAnim.playState === 'running') requestAnimationFrame(tick); };
-      requestAnimationFrame(tick);
-    } else { playAnim.play(); requestAnimationFrame(function t() { setProgress(playAnim.currentTime / 8000); if (playAnim.playState === 'running') requestAnimationFrame(t); }); }
+      lastT = 0;
+    } else playAnim.play();
+    requestAnimationFrame(tick);
     $('takeIcon').innerHTML = PAUSE;
     if (step === 3) setStep(3, $('cards').children[3]);
   });
@@ -912,6 +1022,7 @@ function buildKidAnimation() {
     const b = e.target.closest('.s-card');
     if (!b || step !== 3) return;
     picked = REACTIONS[+b.dataset.i];
+    Sound.tap();
     if (playAnim) { playAnim.cancel(); playAnim = null; $('takeIcon').innerHTML = PLAY; setProgress(0); }
     $('nEmoji').src = picked.big;
     $('nEmoji').classList.toggle('square', picked.id !== 'rocket');
@@ -927,6 +1038,7 @@ function buildKidAnimation() {
   // Inspiration chips add their line to the note
   $('chips').addEventListener('click', e => {
     const c = e.target.closest('.n-chip'); if (!c) return;
+    Sound.tap();
     const t = $('nText'); t.value = (t.value.trim() ? `${t.value.trim()} ${c.textContent}` : c.textContent).slice(0, 100);
     updateCount(); t.focus();
   });
@@ -943,6 +1055,7 @@ function buildKidAnimation() {
     b.innerHTML = 'Sent <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     b.animate([{ transform: 'scale(1)' }, { transform: 'scale(.95)', offset: .3 }, { transform: 'scale(1.04)', offset: .7 }, { transform: 'scale(1)' }], { duration: 420, easing: OUT });
     $('nText').readOnly = true;
+    Sound.sent();
     setStep(4);
     later(2200, () => showReturn(note));
   });
@@ -969,6 +1082,7 @@ function buildKidAnimation() {
     // the emoji pops in, then the words get stuck on like a sticker
     em.animate([{ transform: 'scale(.3) rotate(-20deg)', opacity: 0 }, { transform: 'scale(1.12) rotate(4deg)', opacity: 1, offset: .6 }, { transform: 'scale(1) rotate(0deg)', opacity: 1 }],
       { duration: 650, delay: d + 450, easing: OUT, fill: 'both' });
+    Sound.slap(d + (picked.full ? 450 + 380 : 820 + 300)); Sound.cheer(d + (picked.full ? 450 + 460 : 820 + 380));
     $('krSay').animate([{ transform: 'scale(1.5) rotate(-14deg)', opacity: 0 }, { transform: 'scale(.96) rotate(-5deg)', opacity: 1, offset: .7 }, { transform: 'scale(1) rotate(-6deg)', opacity: 1 }],
       { duration: 460, delay: d + 820, easing: OUT, fill: 'both' });
     [['krNote', 1150], ['krBtn', 1200], ['krClose', 1250]].forEach(([id, dl]) =>
@@ -978,7 +1092,7 @@ function buildKidAnimation() {
   $('krBtn').addEventListener('click', () => { if (step === 5) restart(); });
 
   /* ---------- Restart ---------- */
-  function replayKid() { kid.anims.forEach(a => { a.currentTime = 0; a.play(); }); }
+  function replayKid() { Sound.newRun(); kid.anims.forEach(a => { a.currentTime = 0; a.play(); }); playKidSounds(); }
   function restart() {
     timers.forEach(clearTimeout); timers = [];
     renderSendButton();
@@ -999,8 +1113,19 @@ function buildKidAnimation() {
   }
   $('restart').addEventListener('click', restart);
 
+  const soundBtn = $('soundToggle');
+  const paintSound = () => { soundBtn.textContent = Sound.muted ? '🔇 Sound off' : '🔊 Sound'; soundBtn.setAttribute('aria-pressed', String(!Sound.muted)); soundBtn.setAttribute('aria-label', Sound.muted ? 'Sound off' : 'Sound on'); };
+  soundBtn.addEventListener('click', () => { Sound.init(); Sound.setMuted(!Sound.muted); paintSound(); });
+  paintSound();
+  // Start screen: the click unlocks audio, then Maya's screen plays from the top with sound
+  kid.anims.forEach(a => a.pause());
+  $('startBtn').addEventListener('click', () => {
+    Sound.init();
+    $('start').hidden = true;
+    restart();
+  });
+
   renderSendButton();
-  later(kid.total, startInvites);
   setStep(0, kidBtn);
   fit();
   document.fonts && document.fonts.ready.then(fit);
