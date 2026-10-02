@@ -281,7 +281,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   <span class="tag">Design prototype · Home assignment for Simply</span>
   <div class="step"><div class="dots" id="dots"></div><span id="stepText"></span></div>
   <div class="sp"></div>
-  <button class="sound" id="soundToggle" aria-pressed="true" aria-label="Sound on">🔊 Sound</button>
+  <button class="sound" id="soundToggle" aria-pressed="true" aria-label="Read-aloud voice on">🔊 Voice</button>
   <label><input type="checkbox" id="hintToggle" checked> Show hints</label>
   <button class="primary" id="restart">Restart</button>
 </div>
@@ -290,7 +290,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   <div class="start-card">
     <h2>Show my parent</h2>
     <p>Maya finishes a song on her tablet and shares it. Her parent listens on their phone and sends back some love.</p>
-    <p>Turn your sound on for the full experience.</p>
+    <p>Turn your sound on. Maya’s screens read their words aloud, for kids who can’t read yet.</p>
     <button class="start-btn" id="startBtn"><svg width="16" height="18" viewBox="0 0 16 18"><path d="M1.5 1.5v15L15 9z" fill="#241400"/></svg>Start prototype</button>
   </div>
 </div>
@@ -709,66 +709,44 @@ function buildKidAnimation() {
   const $ = (id) => document.getElementById(id);
   const kid = buildKidAnimation();
 
-  /* ---------- Sound: everything is synthesized with Web Audio, no files ---------- */
-  const Sound = (() => {
-    let ctx = null, master = null, run = null, muted = false;
+  /* ---------- Voice: Maya's screens read their words aloud, for kids who can't read yet ---------- */
+  // Uses the browser's built-in speech (Web Speech API), so there are no audio files. The voice depends on the device.
+  const Voice = (() => {
+    const synth = window.speechSynthesis;
+    let muted = false, voice = null, timers = [];
     try { muted = localStorage.getItem('smp-muted') === '1'; } catch (_) {}
-    const NOTE = (n) => { const m = n.match(/^([A-G])(#?)(\d)$/); const st = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] ? 1 : 0); return 440 * Math.pow(2, (st + (+m[3] - 4) * 12 - 9) / 12); };
-    const init = () => {
-      if (ctx) { ctx.resume(); return; }
-      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-      ctx = new AC(); master = ctx.createGain(); master.gain.value = muted ? 0 : .6;
-      const comp = ctx.createDynamicsCompressor(); master.connect(comp); comp.connect(ctx.destination);
-      newRun();
+    const PREFERRED = ['Samantha', 'Google US English', 'Microsoft Aria', 'Microsoft Jenny', 'Karen', 'Moira', 'Tessa'];
+    const pickVoice = () => {
+      if (!synth) return;
+      const all = synth.getVoices().filter(v => /^en(-|_)/i.test(v.lang));
+      voice = PREFERRED.map(n => all.find(v => v.name.includes(n))).find(Boolean) || all.find(v => /en-US/i.test(v.lang)) || all[0] || null;
     };
-    // a "run" bus collects every sound scheduled for one pass through the flow, so Restart can silence them all at once
-    const newRun = () => { if (!ctx) return; if (run) { run.gain.setTargetAtTime(0, ctx.currentTime, .02); const old = run; setTimeout(() => old.disconnect(), 300); } run = ctx.createGain(); run.connect(master); };
-    const at = (ms) => ctx.currentTime + Math.max(0, ms) / 1000;
-    const env = (g, t, a, peak, d) => { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + a + d); };
-    const piano = (note, ms = 0, vel = .5, len = 1.2) => {
-      if (!ctx) return; const f = typeof note === 'number' ? note : NOTE(note), t = at(ms);
-      [[1, 1], [2, .3], [3, .1]].forEach(([h, amp], k) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sine'; o.frequency.value = f * h * (1 + (k - 1.5) * .0007);
-        env(g, t, .006, vel * amp * .5, len / (1 + k * .6)); o.connect(g); g.connect(run); o.start(t); o.stop(t + len + .1);
-      });
-    };
-    const bell = (note, ms = 0, vel = .35) => {
-      if (!ctx) return; const f = typeof note === 'number' ? note : NOTE(note), t = at(ms);
-      [[1, 1, .9], [2.76, .35, .5], [5.4, .15, .3]].forEach(([r, amp, d]) => {
-        const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.value = f * r;
-        env(g, t, .004, vel * amp, d); o.connect(g); g.connect(run); o.start(t); o.stop(t + d + .05);
-      });
-    };
-    const glide = (ms, dur, from, to, vel) => {
-      if (!ctx) return; const t = at(ms), o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sine'; o.frequency.setValueAtTime(from, t); o.frequency.exponentialRampToValueAtTime(to, t + dur);
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel, t + dur * .4); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-      o.connect(g); g.connect(run); o.start(t); o.stop(t + dur + .05);
+    if (synth) { pickVoice(); synth.addEventListener?.('voiceschanged', pickVoice); }
+    // emoji and quotes aren't read well, so strip them before speaking
+    const clean = (t) => t.replace(/<br\s*\/?>/gi, ' ').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').replace(/[“”"]/g, '').replace(/\s+/g, ' ').trim();
+    const say = (text) => {
+      if (!synth || muted) return;
+      const u = new SpeechSynthesisUtterance(clean(text));
+      if (voice) u.voice = voice;
+      u.lang = voice?.lang || 'en-US'; u.rate = .92; u.pitch = 1.1; u.volume = 1;
+      synth.speak(u);
     };
     return {
-      init, newRun, piano, bell,
-      get ready() { return !!ctx; },
+      // the Start click unlocks speech on browsers that need a user gesture first (e.g. iOS Safari)
+      unlock() { if (synth) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; synth.speak(u); } },
+      at(ms, text) { timers.push(setTimeout(() => say(text), ms)); },
+      stop() { timers.forEach(clearTimeout); timers = []; synth?.cancel(); },
+      get supported() { return !!synth; },
       get muted() { return muted; },
-      setMuted(m) { muted = m; try { localStorage.setItem('smp-muted', m ? '1' : '0'); } catch (_) {} if (master) master.gain.setTargetAtTime(m ? 0 : .6, ctx.currentTime, .03); },
-      // named moments used by the flow
-      // Sound is only on Maya's screens, and kept soft
-      chord(ms) { ['C4', 'E4', 'G4'].forEach((n, i) => piano(n, ms + i * 25, .26, 1.6)); },
-      stars(msList) { ['E5', 'G5', 'C6'].forEach((n, i) => bell(n, msList[i], .12)); },
-      send(flightMs) { glide(0, flightMs / 1000, 330, 660, .08); },
-      arrive(ms = 0) { bell('C6', ms, .14); },
-      cheer(ms = 0) { ['C5', 'E5', 'G5'].forEach((n, i) => bell(n, ms + i * 90, .13)); },
+      setMuted(m) { muted = m; try { localStorage.setItem('smp-muted', m ? '1' : '0'); } catch (_) {} if (m) synth?.cancel(); },
     };
   })();
 
-  // Maya's screen: the piano is heard as the keys play
-  function playKidSounds() {
-    if (!Sound.ready) return;
+  // Screen 1 → screen 2: read the headline when it appears, then the next step
+  function playKidVoice() {
     const T = kid.timing;
-    const SCALE = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'];
-    for (let i = 0; i < T.keyCount; i++) Sound.piano(SCALE[i], T.PLAY_START + T.CYCLE * T.phase(i), .24, .9);   // one gentle run, on the first wave only
-    Sound.chord(T.FINALE + 60);
-    Sound.stars([0, 1, 2].map(i => T.TRANSITION + 520 + i * 110 + 280));
+    Voice.at(T.FINALE + 150, 'That was awesome!');
+    Voice.at(T.TRANSITION + 650, 'You mastered it! Tap the button to show your parent.');
   }
 
   const OUT = 'cubic-bezier(.22,1,.36,1)', POP = 'cubic-bezier(.34,1.56,.64,1)', IN = 'cubic-bezier(.55,0,.75,.2)';
@@ -931,7 +909,6 @@ function buildKidAnimation() {
     card.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.03)', offset: .4 }, { transform: 'scale(1)' }], { duration: 360, easing: OUT });
     const dx = to.x + to.w / 2 - (from.x + from.w / 2), dy = to.y + to.h / 2 - (from.y + from.h / 2);
     const end = Math.max(.05, to.w / from.w);
-    Sound.send(900);
     fly.animate([
       { transform: 'translate(0,0) scale(1) rotate(0deg)', boxShadow: '0 1.2cqw 2.6cqw -1cqw rgba(5,0,25,.55)' },
       { transform: `translate(0px,${-cq(2)}px) scale(1.05) rotate(-3deg)`, boxShadow: '0 2.4cqw 3.6cqw -1cqw rgba(5,0,25,.6)', offset: .2 },
@@ -940,7 +917,7 @@ function buildKidAnimation() {
       { duration: 900, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' }).finished.then(() => {
         fly.remove();
         av.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.45)', offset: .35 }, { transform: 'scale(.92)', offset: .7 }, { transform: 'scale(1)' }], { duration: 520, easing: OUT });
-        const c = local(av); burstHearts(c.x + c.w / 2, c.y + c.h / 2, 6); Sound.arrive();
+        const c = local(av); burstHearts(c.x + c.w / 2, c.y + c.h / 2, 6);
         const lab = kidBtn.querySelector('.btn-label');
         lab.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, delay: 420, fill: 'forwards' }).finished.then(() => {
           kidBtn.classList.add('sent'); lab.innerHTML = `Sent to my parent ${ICON_CHECK}`;
@@ -1058,7 +1035,8 @@ function buildKidAnimation() {
     // the emoji pops in, then the words get stuck on like a sticker
     em.animate([{ transform: 'scale(.3) rotate(-20deg)', opacity: 0 }, { transform: 'scale(1.12) rotate(4deg)', opacity: 1, offset: .6 }, { transform: 'scale(1) rotate(0deg)', opacity: 1 }],
       { duration: 650, delay: d + 450, easing: OUT, fill: 'both' });
-    Sound.cheer(d + (picked.full ? 450 + 380 : 820 + 320));
+    Voice.at(d + 300, `Your parent heard your song! Look what they sent you: ${picked.title}`);
+    if (note) Voice.at(d + 300, `They wrote: ${note}`);
     $('krSay').animate([{ transform: 'scale(1.5) rotate(-14deg)', opacity: 0 }, { transform: 'scale(.96) rotate(-5deg)', opacity: 1, offset: .7 }, { transform: 'scale(1) rotate(-6deg)', opacity: 1 }],
       { duration: 460, delay: d + 820, easing: OUT, fill: 'both' });
     [['krNote', 1150], ['krBtn', 1200], ['krClose', 1250]].forEach(([id, dl]) =>
@@ -1068,7 +1046,7 @@ function buildKidAnimation() {
   $('krBtn').addEventListener('click', () => { if (step === 5) restart(); });
 
   /* ---------- Restart ---------- */
-  function replayKid() { Sound.newRun(); kid.anims.forEach(a => { a.currentTime = 0; a.play(); }); playKidSounds(); }
+  function replayKid() { Voice.stop(); kid.anims.forEach(a => { a.currentTime = 0; a.play(); }); playKidVoice(); }
   function restart() {
     timers.forEach(clearTimeout); timers = [];
     renderSendButton();
@@ -1090,13 +1068,14 @@ function buildKidAnimation() {
   $('restart').addEventListener('click', restart);
 
   const soundBtn = $('soundToggle');
-  const paintSound = () => { soundBtn.textContent = Sound.muted ? '🔇 Sound off' : '🔊 Sound'; soundBtn.setAttribute('aria-pressed', String(!Sound.muted)); soundBtn.setAttribute('aria-label', Sound.muted ? 'Sound off' : 'Sound on'); };
-  soundBtn.addEventListener('click', () => { Sound.init(); Sound.setMuted(!Sound.muted); paintSound(); });
+  const paintSound = () => { soundBtn.textContent = Voice.muted ? '🔇 Voice off' : '🔊 Voice'; soundBtn.setAttribute('aria-pressed', String(!Voice.muted)); soundBtn.setAttribute('aria-label', Voice.muted ? 'Read-aloud voice off' : 'Read-aloud voice on'); };
+  soundBtn.addEventListener('click', () => { Voice.setMuted(!Voice.muted); paintSound(); });
+  if (!Voice.supported) soundBtn.hidden = true;
   paintSound();
   // Start screen: the click unlocks audio, then Maya's screen plays from the top with sound
   kid.anims.forEach(a => a.pause());
   $('startBtn').addEventListener('click', () => {
-    Sound.init();
+    Voice.unlock();
     $('start').hidden = true;
     restart();
   });
