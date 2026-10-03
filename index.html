@@ -282,15 +282,22 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 .n-cap { left: 0; right: 0; top: 746px; text-align: center; font: 500 14.5px var(--simply-body); color: #807e8b; }
 
 /* Lock screen with the notification (placeholder entry point) */
-.lock { position: absolute; inset: 0; z-index: 6; background: radial-gradient(120% 80% at 30% 20%, #3b2a8f 0%, #1a1446 55%, #0c0a22 100%); color: #fff; }
-.lock-time { position: absolute; left: 0; right: 0; top: 118px; text-align: center; font: 600 88px/1 system-ui, -apple-system, sans-serif; letter-spacing: -.02em; }
-.lock-date { position: absolute; left: 0; right: 0; top: 92px; text-align: center; font: 500 20px system-ui, -apple-system, sans-serif; opacity: .85; }
+/* soft warm wallpaper (petal pinks and peach), mid-toned so the white lock-screen text stays readable */
+.lock { position: absolute; inset: 0; z-index: 6; color: #fff;
+  background:
+    radial-gradient(60% 40% at 72% 58%, rgba(255,214,140,.85) 0%, rgba(255,214,140,0) 70%),
+    radial-gradient(55% 38% at 22% 30%, rgba(246,160,190,.9) 0%, rgba(246,160,190,0) 70%),
+    radial-gradient(70% 45% at 40% 85%, rgba(233,130,160,.85) 0%, rgba(233,130,160,0) 70%),
+    linear-gradient(170deg, #d98aa5 0%, #e9a8a0 45%, #c97b98 100%); }
+.lock::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(60,20,40,.22) 0%, rgba(60,20,40,0) 45%, rgba(60,20,40,.18) 100%); }
+.lock-time { position: absolute; left: 0; right: 0; top: 118px; text-align: center; font: 600 88px/1 system-ui, -apple-system, sans-serif; letter-spacing: -.02em; text-shadow: 0 2px 18px rgba(80,20,50,.25); }
+.lock-date { position: absolute; left: 0; right: 0; top: 92px; text-align: center; font: 500 20px system-ui, -apple-system, sans-serif; opacity: .92; text-shadow: 0 1px 10px rgba(80,20,50,.25); }
 .notif { position: absolute; left: 12px; right: 12px; top: 250px; border-radius: 22px; padding: 14px 16px 14px 11px; background: rgba(255,255,255,.2); box-shadow: inset 0 0 0 1px rgba(255,255,255,.32); color: #fff; display: flex; gap: 12px; align-items: center; cursor: pointer; opacity: 0; transform: translateY(-40px) scale(.96); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); }
 .notif .ic { flex: none; width: 44px; height: 44px; border-radius: 50%; background: #7b2ff7; display: grid; place-items: center; }
 .notif .txt { flex: 1; min-width: 0; font: 400 15px/1.35 system-ui, -apple-system, sans-serif; display: grid; }
 .notif .txt b { font-weight: 600; font-size: 16px; display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1px; }
 .notif .txt b small { font-weight: 400; font-size: 14.5px; color: rgba(255,255,255,.85); }
-.lock-hint { position: absolute; left: 0; right: 0; bottom: 60px; text-align: center; font: 500 15px system-ui, -apple-system, sans-serif; opacity: .6; }
+.lock-hint { position: absolute; left: 0; right: 0; bottom: 60px; text-align: center; font: 500 15px system-ui, -apple-system, sans-serif; opacity: .85; text-shadow: 0 1px 8px rgba(80,20,50,.3); }
 
 @media (prefers-reduced-motion: reduce) {
   .device { transition: none; }
