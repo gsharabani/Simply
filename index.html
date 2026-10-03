@@ -789,6 +789,21 @@ function buildKidAnimation() {
         return load();
       },
       at(ms, ...names) { timers.push(setTimeout(() => play(names), ms)); },
+      // a short, soft celebration chime (C–E–G–C bells); the next voice line waits for it to finish
+      chimeAt(ms) { timers.push(setTimeout(() => {
+        if (!ctx || muted) return;
+        const t0 = Math.max(ctx.currentTime + .02, busyUntil + .05);
+        [[1046.5, 0], [1318.5, .09], [1568, .18], [2093, .3]].forEach(([f, dt], i) => {
+          const last = i === 3, len = last ? .9 : .45;
+          [[1, 1], [2.76, .25]].forEach(([r, amp]) => {
+            const o = ctx.createOscillator(), g = ctx.createGain(), t = t0 + dt;
+            o.type = 'sine'; o.frequency.value = f * r;
+            g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime((last ? .13 : .1) * amp, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + len * (r > 1 ? .5 : 1));
+            o.connect(g); g.connect(out); o.start(t); o.stop(t + len + .05); playing.push(o);
+          });
+        });
+        busyUntil = t0 + .75;
+      }, ms)); },
       stop() { timers.forEach(clearTimeout); timers = []; playing.forEach(s => { try { s.stop(); } catch (_) {} }); playing = []; busyUntil = 0; },
       get supported() { return !!(window.AudioContext || window.webkitAudioContext); },
       get muted() { return muted; },
@@ -1129,7 +1144,8 @@ function buildKidAnimation() {
     // the emoji pops in, then the words get stuck on like a sticker
     em.animate([{ transform: 'scale(.3) rotate(-20deg)', opacity: 0 }, { transform: 'scale(1.12) rotate(4deg)', opacity: 1, offset: .6 }, { transform: 'scale(1) rotate(0deg)', opacity: 1 }],
       { duration: 650, delay: d + 450, easing: OUT, fill: 'both' });
-    Voice.at(d + 300, 'heard', REACTION_CLIP[picked.id]);
+    Voice.chimeAt(d + 150);   // as the popup pops in
+    Voice.at(d + 400, 'heard', REACTION_CLIP[picked.id]);
     $('krSay').animate([{ transform: 'scale(1.5) rotate(-14deg)', opacity: 0 }, { transform: 'scale(.96) rotate(-5deg)', opacity: 1, offset: .7 }, { transform: 'scale(1) rotate(-6deg)', opacity: 1 }],
       { duration: 460, delay: d + 820, easing: OUT, fill: 'both' });
     [['krNote', 1150], ['krBtn', 1200], ['krClose', 1250]].forEach(([id, dl]) =>
