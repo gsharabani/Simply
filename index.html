@@ -111,12 +111,12 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 
 .whoa { left: 50%; top: 81.5%; font-size: 3.9cqw; font-weight: 600; white-space: nowrap; }
 
-.stars { left: 71.1%; top: 24.1%; display: flex; gap: 1.45cqw; }
+.stars { left: 71%; top: 28.4%; display: flex; gap: 1.45cqw; }
 .stars > div { width: 3.4cqw; height: 3.4cqw; }
 .stars svg { width: 100%; height: 100%; display: block; }
-.title2 { left: 71.1%; top: 33.1%; font-size: 3.9cqw; font-weight: 600; white-space: nowrap; }
+.title2 { left: 71%; top: 37.4%; font-size: 3.95cqw; font-weight: 600; white-space: nowrap; }
 
-.card { left: 71.1%; top: 46.5%; width: 35.8cqw; }
+.card { left: 71%; top: 50.8%; width: 35.8cqw; }
 .card-in { display: flex; gap: .8cqw; padding: 1.05cqw; border-radius: 1cqw; background: #8116f9; box-shadow: 0 1.2cqw 2.6cqw -1cqw rgba(5,0,25,.55); }
 .album { flex: none; width: 6.9cqw; height: 6.9cqw; border-radius: .5cqw; background: #1d0551 center / cover no-repeat; }
 .track { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: .4cqw; }
@@ -127,18 +127,19 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 .bars { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; height: 3.4cqw; }
 .bars i { display: block; width: .18cqw; border-radius: .2cqw; background: #c491fc; transform-origin: center; }
 
-.btn { left: 71.1%; top: 66.5%; }
-.btn-in { width: 21.9cqw; height: 5.2cqw; border-radius: 99px; background: #fff; color: #1d0551; display: flex; align-items: center; justify-content: center; gap: .6cqw; font-size: 1.75cqw; font-weight: 500; }
+/* two buttons side by side: Keep playing (outline) + Show my parent (filled) */
+.btn { left: 80%; top: 70.8%; }
+.btn-in { width: 19.35cqw; height: 5.2cqw; border-radius: 99px; background: #fff; color: #1d0551; display: flex; align-items: center; justify-content: center; gap: .6cqw; font-size: 1.85cqw; font-weight: 600; }
 .heart { width: 1.9cqw; height: 1.9cqw; }
-.link { left: 71.1%; top: 75.2%; font-size: 1.6cqw; font-weight: 500; white-space: nowrap; }
-.link-in { display: flex; align-items: center; gap: .6cqw; }
-.keys { width: 1.6cqw; height: 1.6cqw; }
+.link { left: 60.6%; top: 70.8%; font-size: 1.85cqw; font-weight: 600; white-space: nowrap; }
+.link-in { width: 16.55cqw; height: 5.2cqw; border-radius: 99px; box-shadow: inset 0 0 0 .14cqw rgba(255,255,255,.85); color: #fff; display: flex; align-items: center; justify-content: center; gap: .6cqw; }
+.keys { width: 1.8cqw; height: 1.8cqw; }
 
 
 .stage { border-radius: 0; box-shadow: none; }
 .btn-in { cursor: pointer; transition: transform .15s; }
 .btn-in:active { transform: scale(.96); }
-.btn-in.sent { background: #e9e2ff; }
+.btn-in.sent { background: #fff; cursor: default; }
 
 /* Send: tap, and the song flies into the heart on the button */
 .btn-label { display: flex; align-items: center; gap: .6cqw; }
@@ -961,7 +962,7 @@ function buildKidAnimation() {
         const c = local(av); burstHearts(c.x + c.w / 2, c.y + c.h / 2, 6);
         const lab = kidBtn.querySelector('.btn-label');
         lab.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, delay: 420, fill: 'forwards' }).finished.then(() => {
-          kidBtn.classList.add('sent'); lab.innerHTML = `Sent to my parent ${ICON_CHECK}`;
+          kidBtn.classList.add('sent'); lab.innerHTML = `Sent ${ICON_CHECK}`;
           lab.animate([{ opacity: 0, transform: 'translateY(.6cqw)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 300, easing: OUT, fill: 'forwards' });
         });
       });
