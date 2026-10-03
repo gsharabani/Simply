@@ -60,9 +60,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 
 .tablet { padding: 24px; border-radius: 38px; background: #0b0b10; box-shadow: inset 0 0 0 1px #2a2a36, 0 30px 80px -30px rgba(0,0,0,.8); }
 .tablet-screen { width: 853px; border-radius: 14px; overflow: hidden; }
-.phone-wrap { width: 281px; height: 630px; }
-.phone { width: 457px; height: 1024px; padding: 12px; border-radius: 64px; background: #0b0b10; box-shadow: inset 0 0 0 1px #2a2a36, 0 30px 80px -30px rgba(0,0,0,.8); transform: scale(.615); transform-origin: 0 0; }
-.phone-screen { position: relative; width: 433px; height: 1000px; border-radius: 52px; overflow: hidden; background: #fff; color: var(--ink);  color-scheme: light; }
+.phone-wrap { width: 281px; height: 593px; }
+.phone { width: 457px; height: 964px; padding: 12px; border-radius: 64px; background: #0b0b10; box-shadow: inset 0 0 0 1px #2a2a36, 0 30px 80px -30px rgba(0,0,0,.8); transform: scale(.615); transform-origin: 0 0; }
+.phone-screen { position: relative; width: 433px; height: 940px; border-radius: 52px; overflow: hidden; background: #fff; color: var(--ink);  color-scheme: light; }
 
 /* ---------- Start screen (gives the browser the click it needs before it can play sound) ---------- */
 .start { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(14,10,26,.72); backdrop-filter: blur(10px); }
@@ -202,11 +202,11 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 .p-url { position: absolute; left: 12px; right: 12px; top: 56px; height: 42px; border-radius: 21px; background: #e9e9ec; display: flex; align-items: center; justify-content: center; gap: 6px; font: 400 18px system-ui, -apple-system, sans-serif; color: #111; z-index: 3; }
 .p-url .share { position: absolute; right: 18px; top: 9px; }
 .p-rule { position: absolute; left: 0; right: 0; top: 108px; height: 1px; background: #d9d9de; z-index: 3; }
-.p-toolbar { position: absolute; left: 0; right: 0; bottom: 0; height: 92px; border-top: 1px solid #d9d9de; background: #fff; display: flex; justify-content: space-between; padding: 12px 22px 0; z-index: 3; }
+.p-toolbar { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; border-top: 1px solid #d9d9de; background: #fff; display: flex; justify-content: space-between; padding: 12px 22px 0; z-index: 3; }
 .p-toolbar svg { width: 30px; height: 30px; }
 .p-toolbar .plus { width: 42px; height: 42px; margin-top: -6px; border-radius: 50%; background: #e6e6ea; display: grid; place-items: center; }
 .p-home { position: absolute; left: 50%; bottom: 10px; width: 156px; height: 5px; margin-left: -78px; border-radius: 3px; background: #111; z-index: 4; }
-.p-viewport { position: absolute; left: 0; right: 0; top: 109px; bottom: 92px; overflow: hidden; }
+.p-viewport { position: absolute; left: 0; right: 0; top: 109px; bottom: 84px; overflow: hidden; }
 .view { position: absolute; inset: 0; background: #fff; visibility: hidden; }
 .view.on { visibility: visible; }
 .abs { position: absolute; }
@@ -232,39 +232,39 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 .m-song .w .bars-p { flex: 1; height: 26px; }
 .m-song .w .bars-p i { background: #783ffa; }
 .m-song .w span { font: 500 11px var(--simply-body); color: #2a1a4a; }
-.m-love { left: 0; right: 0; top: 578px; text-align: center; font: 500 15.5px var(--simply-body); color: #2e2a45; }
-.m-listen { left: 0; right: 0; top: 623px; width: 313px; height: 52px; margin: 0 auto; background: #783ffa; font: 700 17px var(--body); }
+.m-love { left: 0; right: 0; top: 608px; text-align: center; font: 500 15.5px var(--simply-body); color: #2e2a45; }
+.m-listen { left: 0; right: 0; top: 653px; width: 313px; height: 50px; margin: 0 auto; background: #783ffa; font: 700 17px var(--body); }
 
 /* P2 · Maya's take (updated design) */
 .s-logo { left: 22px; top: 17px; width: 126px; }
-.s-band { left: 0; right: 0; top: 81px; height: 241px; background: #783ffa; color: #fff; }
+.s-band { left: 0; right: 0; top: 77px; height: 224px; background: #783ffa; color: #fff; }
 .s-band .k { position: absolute; }
-.s-take { left: 0; right: 0; top: 43px; text-align: center; font: 500 17px var(--display); }
-.s-song { left: 0; right: 0; top: 74px; text-align: center; font: 600 25px var(--display); }
-.s-player { left: 23px; right: 23px; top: 129px; height: 88px; border-radius: 14px; background: #986dfb; display: flex; align-items: center; gap: 10px; padding: 0 11px 0 9px; }
-.s-album { flex: none; width: 65px; height: 65px; border-radius: 6px; object-fit: cover; }
-.s-play { flex: none; width: 51px; height: 51px; border-radius: 50%; background: #22035c; border: 0; display: grid; place-items: center; cursor: pointer; }
+.s-take { left: 0; right: 0; top: 41px; text-align: center; font: 500 17px var(--display); }
+.s-song { left: 0; right: 0; top: 71px; text-align: center; font: 600 25px var(--display); }
+.s-player { left: 23px; right: 23px; top: 121px; height: 82px; border-radius: 14px; background: #986dfb; display: flex; align-items: center; gap: 10px; padding: 0 11px 0 9px; }
+.s-album { flex: none; width: 60px; height: 60px; border-radius: 6px; object-fit: cover; }
+.s-play { flex: none; width: 48px; height: 48px; border-radius: 50%; background: #22035c; border: 0; display: grid; place-items: center; cursor: pointer; }
 .s-player .bars-p { flex: 1; height: 54px; }
 .s-player .bars-p i { background: #ccb6fd; transition: background .15s; }
 .s-player .bars-p i.done { background: #fff; }
 .s-time { flex: none; font: 500 13px var(--body); color: rgba(255,255,255,.85); font-variant-numeric: tabular-nums; }
-.s-love { left: 23px; top: 343px; font: 700 18px var(--body); color: #303030; }
-.s-cards { left: 23px; right: 23px; top: 387px; display: flex; flex-direction: column; gap: 9px; }
-.s-card { height: 65px; border-radius: 10px; border: 0; background: #f1f3f9; display: flex; align-items: center; gap: 10px; padding: 0 16px 0 12px; font: 600 15.5px var(--body); color: #2e2a45; text-align: left; cursor: pointer; transition: transform .15s, box-shadow .2s, background .2s; }
+.s-love { left: 23px; top: 321px; font: 700 18px var(--body); color: #303030; }
+.s-cards { left: 23px; right: 23px; top: 364px; display: flex; flex-direction: column; gap: 10px; }
+.s-card { height: 58px; border-radius: 10px; border: 0; background: #f1f3f9; display: flex; align-items: center; gap: 10px; padding: 0 16px 0 12px; font: 600 15.5px var(--body); color: #2e2a45; text-align: left; cursor: pointer; transition: transform .15s, box-shadow .2s, background .2s; }
 .s-card:hover { background: #ece9f8; }
 .s-card:active { transform: scale(.98); }
 .s-card img { width: 50px; height: 50px; object-fit: contain; }
 
 /* P3 · add a note (updated design) */
-.n-kicker { left: 0; right: 0; top: 104px; text-align: center; font: 500 15px var(--simply-body); color: #807e8b; }
-.n-emoji { left: 50%; top: 149px; width: 100px; height: 78px; margin-left: -50px; object-fit: contain; }
+.n-kicker { left: 0; right: 0; top: 98px; text-align: center; font: 500 15px var(--simply-body); color: #807e8b; }
+.n-emoji { left: 50%; top: 137px; width: 100px; height: 78px; margin-left: -50px; object-fit: contain; }
 /* square emoji art (heart, fire, clap, crown) has more empty space around it than the rocket, so it gets a bigger box */
-.n-emoji.square { top: 125px; width: 132px; height: 132px; margin-left: -66px; }
-.n-title { left: 30px; right: 30px; top: 238px; text-align: center; font: 600 29px/1.2 var(--display); color: #2e2a45; text-wrap: balance; }
-.n-label2 { left: 24px; top: 425px; font: 700 16.5px var(--body); color: #2e2a45; }
-.n-textbox { left: 22px; top: 340px; width: 388px; height: 65px; border: 1.5px solid #efeafe; border-radius: 12px; background: #fff; transition: border-color .2s; overflow: hidden; }
+.n-emoji.square { top: 113px; width: 132px; height: 132px; margin-left: -66px; }
+.n-title { left: 30px; right: 30px; top: 224px; text-align: center; font: 600 29px/1.2 var(--display); color: #2e2a45; text-wrap: balance; }
+.n-label2 { left: 24px; top: 401px; font: 700 16.5px var(--body); color: #2e2a45; }
+.n-textbox { left: 22px; top: 320px; width: 388px; height: 60px; border: 1.5px solid #efeafe; border-radius: 12px; background: #fff; transition: border-color .2s; overflow: hidden; }
 .n-textbox:focus-within, .n-textbox.recording { border-color: #b9a2f8; }
-.n-text { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 12px; background: transparent; padding: 20px 62px 8px 16px; font: 500 15px/1.45 var(--simply-body); color: #2e2a45; resize: none; outline: none; }
+.n-text { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 12px; background: transparent; padding: 18px 62px 6px 16px; font: 500 15px/1.45 var(--simply-body); color: #2e2a45; resize: none; outline: none; }
 .n-text::placeholder { color: #8f8d99; }
 /* voice message: mic → recording → recorded (simulated, the prototype can't use the real microphone) */
 .n-mic, .n-stop, .n-vplay { position: absolute; top: 50%; width: 36px; height: 36px; margin-top: -18px; border: 0; border-radius: 50%; display: grid; place-items: center; cursor: pointer; }
@@ -290,13 +290,13 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 .n-vplay svg { width: 14px; height: 14px; }
 .n-vdel { position: absolute; right: 14px; top: 50%; width: 32px; height: 32px; margin-top: -16px; border: 0; border-radius: 50%; background: transparent; display: grid; place-items: center; cursor: pointer; }
 .n-vdel:hover { background: #f1f3f9; }
-.n-chips { left: 23px; right: 23px; top: 459px; display: flex; flex-wrap: wrap; gap: 9px 10px; }
-.n-chip { height: 35px; border-radius: 8px; border: 0; background: #f1f3f9; padding: 0 10px; font: 400 15.5px var(--body); color: #2e2a45; cursor: pointer; }
+.n-chips { left: 23px; right: 23px; top: 434px; display: flex; flex-wrap: wrap; gap: 9px 10px; }
+.n-chip { height: 31px; border-radius: 8px; border: 0; background: #f1f3f9; padding: 0 10px; font: 400 15.5px var(--body); color: #2e2a45; cursor: pointer; }
 .n-chip:hover { background: #e9e6f6; }
-.n-send { left: 50%; top: 670px; width: 293px; height: 55px; margin-left: -146.5px; background: #783ffa; font: 700 17px var(--body); transition: width .35s cubic-bezier(.22,1,.36,1), margin-left .35s cubic-bezier(.22,1,.36,1), transform .15s; }
+.n-send { left: 50%; top: 639px; width: 293px; height: 51px; margin-left: -146.5px; background: #783ffa; font: 700 17px var(--body); transition: width .35s cubic-bezier(.22,1,.36,1), margin-left .35s cubic-bezier(.22,1,.36,1), transform .15s; }
 .n-send.sent { width: 110px; margin-left: -55px; cursor: default; }
 .n-send svg { width: 20px; height: 20px; }
-.n-cap { left: 0; right: 0; top: 746px; text-align: center; font: 500 14.5px var(--simply-body); color: #807e8b; }
+.n-cap { left: 0; right: 0; top: 702px; text-align: center; font: 500 14.5px var(--simply-body); color: #807e8b; }
 
 /* Lock screen with the notification (placeholder entry point) */
 /* soft warm wallpaper (petal pinks and peach), mid-toned so the white lock-screen text stays readable */
